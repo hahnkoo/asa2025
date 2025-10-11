@@ -1,6 +1,6 @@
 # Title: A Praat script for unsupervised phonetic segmentation using spectro-temporal features
 # Author: Hahn Koo (hahn.koo@sjsu.edu)
-# Last updated: 09/26/2025
+# Last updated: 10/10/2025
 
 clearinfo
 
@@ -18,14 +18,16 @@ procedure spec: sound_in, window_length_in, max_freq_in, time_step_in, freq_step
  select sound_in
  s = To Spectrogram: window_length_in, max_freq_in, time_step_in, freq_step_in, window_shape_in$
  s_matrix = To Matrix
- selectObject: s, s_matrix
+ removeObject: s
+ select s_matrix
 endproc
 
 procedure melspec: sound_in, window_length_in, time_step_in, first_filter_in, filter_distance_in, max_freq_in
  select sound_in
  s = To MelSpectrogram: window_length_in, time_step_in, first_filter_in, filter_distance_in, max_freq_in
  s_matrix = To Matrix: "no"
- selectObject: s, s_matrix
+ removeObject: s
+ select s_matrix
 endproc
 
 procedure mfcc: sound_in, n_coef_in, window_length_in, time_step_in, first_filter_in, filter_distance_in, max_freq_in, use_c0_in
@@ -45,9 +47,25 @@ procedure mfcc: sound_in, n_coef_in, window_length_in, time_step_in, first_filte
  removeObject: c0, s_matrix
  s_matrix = sm
  endif
- selectObject: s, s_matrix
+ removeObject: s
+ select s_matrix
 endproc
 
+procedure lpc_burg: sound_in, prediction_order_in, window_length_in, time_step_in, preemphasis_frequency_in
+ select sound_in
+ s = To LPC (burg): prediction_order_in, window_length_in, time_step_in, preemphasis_frequency_in
+ s_matrix = Down to Matrix (lpc)
+ removeObject: s
+ select s_matrix
+endproc
+
+procedure cochleagram: sound_in, time_step_in, frequency_resolution_in, window_length_in, forward_masking_time_in
+ select sound_in
+ s = To Cochleagram: time_step_in, frequency_resolution_in, window_length_in, forward_masking_time_in
+ s_matrix = To Matrix
+ removeObject: s
+ select s_matrix
+endproc
 
 procedure normalize: matrix_in, eps_in
  select matrix_in
@@ -57,9 +75,10 @@ procedure normalize: matrix_in, eps_in
  Formula: "(self[row, col] - mn) / (mx - mn)"
 endproc
 
-procedure log: matrix_in
+procedure log: matrix_in, eps_in
  select matrix_in
- Formula: "log10(self[row, col])"
+ mn = Get minimum
+ Formula: "log10(self[row, col] - mn + eps_in)"
 endproc
 
 procedure pad: table_in, pad_size_in, pad_side_in$
@@ -332,6 +351,8 @@ if input_type$ == "sound file"
    option: "spectrogram"
    option: "mel spectrogram"
    option: "MFCC"
+   option: "cochleagram"
+   option: "LPC (burg)"
   clicked = endPause: "Continue", 1
  if analysis_type$ == "spectrogram"
   beginPause: "Configure spectrogram analysis."
@@ -366,23 +387,39 @@ if input_type$ == "sound file"
    real: "maximum frequency (mel)", 0.0
    boolean: "use c0", 1
    clicked = endPause: "Continue", 1
+ elif analysis_type$ == "LPC (burg)"
+  beginPause: "Configure LPC analysis."
+   natural: "prediction order", 16
+   real: "window length (s)", 0.025
+   real: "time step (s)", 0.01
+   real: "preemphasis frequency (Hz)", 50
+   clicked = endPause: "Continue", 1
+ elif analysis_type$ == "cochleagram"
+  beginPause: "Configure cochleagram analysis."
+   real: "time step (s)", 0.01
+   real: "frequency resolution (Bark)", 0.1
+   real: "window length (s)", 0.025
+   real: "forward masking time (s)", 0.025
+   clicked = endPause: "Continue", 1
  endif
 endif
 
 if input_type$ == "comma-separated file"
  beginPause: "Specify parameters for the file."
   real: "time step (s)", 0.01
-  real: "window length (s)", 0.025
   real: "offset (time of first frame in seconds)", 0.0
   clicked = endPause: "Continue", 1
 endif
+
+beginPause: "Configure how to post-process the feature matrix."
+ boolean: "normalize feature matrix", 1
+ boolean: "log feature matrix", 1
+ clicked = endPause: "Continue", 1
 
 beginPause: "Configure distance measure and peak finding."
  choice: "distance measure", 1
   option: "delta (spectral transition measure)"
   option: "cosine distance"
- boolean: "normalize feature matrix", 1
- boolean: "log feature matrix", 1
  natural: "window size", 2
  boolean: "normalize distance measure", 1
  real: "peak height", 0.05
@@ -415,21 +452,22 @@ for snd_index from 1 to n_snds
    @melspec: snd, window_length, time_step, first_filter_frequency, distance_between_filters, maximum_frequency
   elif analysis_type$ == "MFCC"
    @mfcc: snd, number_of_coefficients, window_length, time_step, first_filter_frequency, distance_between_filters, maximum_frequency, use_c0
+  elif analysis_type$ == "LPC (burg)"
+   @lpc_burg: snd, prediction_order, window_length, time_step, preemphasis_frequency
+  elif analysis_type$ == "cochleagram"
+   @cochleagram: snd, time_step, frequency_resolution, window_length, forward_masking_time
   endif
-  representation = selected(1)
   feature_matrix_sel = selected("Matrix", 1)
   name$ = selected$("Matrix", 1)
-  select representation
-  offset = Get time from frame number: 1
-  select feature_matrix_sel
-  removeObject: representation
+  fms_info$ = Info
+  offset = extractNumber(fms_info$, "x1:")
  endif
 
  if normalize_feature_matrix
   @normalize: feature_matrix_sel, 1e-10
  endif
  if log_feature_matrix
-  @log: feature_matrix_sel
+  @log: feature_matrix_sel, 1e-10
  endif
 
  if distance_measure$ == "delta (spectral transition measure)"
@@ -454,10 +492,10 @@ for snd_index from 1 to n_snds
  if input_type$ == "sound file"
   @create_textgrid: snd
  elif input_type$ == "comma-separated file"
-  @create_textgrid_without_sound: peaks_sel, 0.01
+  @create_textgrid_without_sound: peaks_sel, time_step
  endif
  textgrid_sel = selected("TextGrid", 1)
- @add_to_textgrid: textgrid_sel, peaks_sel, 0.01, offset
+ @add_to_textgrid: textgrid_sel, peaks_sel, time_step, offset
  Save as text file: output_directory$ + "/" + name$ + ".TextGrid"
  removeObject: feature_matrix_sel, distmm_sel, distm_sel, peaks_sel
  removeObject: snd, textgrid_sel
