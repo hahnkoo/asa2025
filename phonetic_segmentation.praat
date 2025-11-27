@@ -347,42 +347,45 @@ procedure remove_silent_boundaries: segmented_textgrid_in, silence_table_in, bou
  ptg = selected("TextGrid", 1)
  stb = selected("Table", 1)
  select stb
- n = Get number of rows
- j = 1
- for i from 1 to n
+ n_stb_rows = Get number of rows
+ n_sil = 0
+ for i from 1 to n_stb_rows
   t$ = Get value: i, "text"
   if t$ == "silent"
-   ss[j, 1] = Get value: i, "tmin"
-   ss[j, 2] = Get value: i, "tmax"
-   j = j + 1
+   ss[n_sil+1, 1] = Get value: i, "tmin"
+   ss[n_sil+1, 2] = Get value: i, "tmax"
+   n_sil = n_sil + 1
   endif
  endfor
- if j > 1
+ if n_sil > 0
   select ptg
   et = Get end time
   pb = Down to Table: "no", 6, "yes", "yes"
-  select pb
-  n = Get number of rows
-  si = 1
+  n_ptg_rows = Get number of rows
+  pbi = 1
+  ssi = 1
   n_removed = 0
-  for i from 1 to n-1
-   ptmin = Get value: i, "tmin"
-   ptmax = Get value: i, "tmax"
-   select ptg
-   if ptmax > ss[si, 1] - boundary_margin_in and ptmax <= ss[si, 2] + boundary_margin_in
-    Remove right boundary: 1, i - n_removed
+  more_to_check = 1
+  while more_to_check
+   select pb
+   ptmax = Get value: pbi, "tmax" 
+   if ptmax > ss[ssi, 1] - boundary_margin_in and ptmax <= ss[ssi, 2] + boundary_margin_in
+    select ptg
+    Remove right boundary: 1, pbi - n_removed
     n_removed = n_removed + 1
+    pbi = pbi + 1
+   elif ptmax < ss[ssi, 1] 
+    pbi = pbi + 1
    endif
-   if ptmax > ss[si, 2]
-    si = si + 1
+   if ptmax >= ss[ssi, 2]
+    ssi = ssi + 1
    endif
-   if si >= j
-    exit
+   if pbi >= n_ptg_rows or ssi > n_sil
+    more_to_check = 0
    endif
-   select pb   
-  endfor
+  endwhile
   select ptg
-  for i from 1 to j-1
+  for i from 1 to n_sil
    if ss[i, 1] > 0
     Insert boundary: 1, ss[i, 1]
    endif
