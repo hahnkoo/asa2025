@@ -74,7 +74,7 @@ Specify whether to use Praat's silence detection command ```Sound: To TextGrid (
 
 Comparable silent interval boundaries may have already been added but located a little differently. To avoid such redundancies, existing boundaries on either side of a silent interval within a margin are removed. So in addition, specify 
 
- * the width of the margin in seconds (```boundary margin```)
+ * width of the margin in seconds (```boundary margin```)
 
 ## Performance
 
@@ -92,6 +92,7 @@ Performance varies with different settings. The following seemed to yield the be
  * window size: 2
  * normalize distance measure: yes
  * peak height: 0.05
+ * apply silence filter: no
 
 Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a reference boundary in the TIMIT corpus, the above resulted in precision = 0.826, recall = 0.735, F-score = 0.778, and R-value (Räsänen et al., 2009) = 0.802.
 
