@@ -1,6 +1,6 @@
 # Title: A Praat script for unsupervised phonetic segmentation using spectro-temporal features
 # Author: Hahn Koo (hahn.koo@sjsu.edu)
-# Last updated: 10/10/2025
+# Last updated: 11/26/2025
 
 clearinfo
 
@@ -334,6 +334,68 @@ procedure add_to_textgrid: textgrid_in, peaks_in, frame_shift, offset
  select textgrid_in
 endproc
 
+procedure table_silences: snd_in, pitch_floor_in, silence_threshold_in, minimum_silent_interval_in, minimum_sounding_interval_in
+ select snd_in
+ stg = To TextGrid (silences): pitch_floor_in, 0.0, silence_threshold_in, minimum_silent_interval_in, minimum_sounding_interval_in, "silent", "sounding"
+ stb = Down to Table: "no", 6, "yes", "no"
+ removeObject: stg
+ select stb
+endproc
+
+procedure remove_silent_boundaries: segmented_textgrid_in, silence_table_in, boundary_margin_in
+ selectObject: segmented_textgrid_in, silence_table_in
+ ptg = selected("TextGrid", 1)
+ stb = selected("Table", 1)
+ select stb
+ n = Get number of rows
+ j = 1
+ for i from 1 to n
+  t$ = Get value: i, "text"
+  if t$ == "silent"
+   ss[j, 1] = Get value: i, "tmin"
+   ss[j, 2] = Get value: i, "tmax"
+   j = j + 1
+  endif
+ endfor
+ if j > 1
+  select ptg
+  et = Get end time
+  pb = Down to Table: "no", 6, "yes", "yes"
+  select pb
+  n = Get number of rows
+  si = 1
+  n_removed = 0
+  for i from 1 to n-1
+   ptmin = Get value: i, "tmin"
+   ptmax = Get value: i, "tmax"
+   select ptg
+   if ptmax > ss[si, 1] - boundary_margin_in and ptmax <= ss[si, 2] + boundary_margin_in
+    Remove right boundary: 1, i - n_removed
+    n_removed = n_removed + 1
+   endif
+   if ptmax > ss[si, 2]
+    si = si + 1
+   endif
+   if si >= j
+    exit
+   endif
+   select pb   
+  endfor
+  select ptg
+  for i from 1 to j-1
+   if ss[i, 1] > 0
+    Insert boundary: 1, ss[i, 1]
+   endif
+   if ss[i, 2] < et - boundary_margin_in
+    Insert boundary: 1, ss[i, 2]
+   endif
+  endfor
+ removeObject: pb
+ endif
+ select ptg
+endproc
+
+
 ## Main script
 
 beginPause: "Specify input and output."
@@ -425,7 +487,14 @@ beginPause: "Configure distance measure and peak finding."
  real: "peak height", 0.05
  clicked = endPause: "Continue", 1
 
-
+beginPause: "Configure silence filter."
+ boolean: "apply silence filter", 0
+ real: "pitch floor (Hz)", 100
+ real: "silence threshold (dB)", -25.0
+ real: "minimum silent interval (s)", 0.1
+ real: "minimum sounding interval (s)", 0.1
+ real: "boundary margin (s)", 0.02
+ clicked = endPause: "Continue", 1
 
 if input_type$ == "sound file"
  snd_list = Create Strings as file list: "snd_list", input_directory$ + "/*" + file_extension$
@@ -496,9 +565,28 @@ for snd_index from 1 to n_snds
  endif
  textgrid_sel = selected("TextGrid", 1)
  @add_to_textgrid: textgrid_sel, peaks_sel, time_step, offset
+
+ if apply_silence_filter
+  @table_silences: snd, pitch_floor, silence_threshold, minimum_silent_interval, minimum_sounding_interval
+  silence_table_sel = selected("Table", 1)
+  @remove_silent_boundaries: textgrid_sel, silence_table_sel, boundary_margin
+  removeObject: silence_table_sel
+ endif
+
  Save as text file: output_directory$ + "/" + name$ + ".TextGrid"
  removeObject: feature_matrix_sel, distmm_sel, distm_sel, peaks_sel
  removeObject: snd, textgrid_sel
+
+
 endfor
 removeObject: snd_list
 appendInfoLine: "Segmentation all complete.", newline$, "TextGrids saved in " + output_directory$
+
+
+
+
+
+
+
+
+

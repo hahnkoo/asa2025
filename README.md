@@ -63,6 +63,19 @@ To identify peaks in the distance measures across the frames (column vectors), s
 
 A distance measure is considered a peak if it is larger than the values to the left and right as well as larger than the threshold.
 
+### Silence filtering
+
+Specify whether to use Praat's silence detection command ```Sound: To TextGrid (silences)``` to revise boundaries: add silent interval boundaries and remove any boundaries within a silent interval. To do so, specify the parameters for the silence detection command: 
+
+ * pitch floor in Hz to smooth the intensity curve (```pitch floor```)
+ * maximum silence intensity value in dB (```silence threshold```)
+ * minimum duration for an interval to be considered silent (```minimum silent interval```)
+ * minimum duration for an interval to be considered not silent (```minimum sounding interval```)
+
+Comparable silent interval boundaries may have already been added but located a little differently. To avoid such redundancies, existing boundaries on either side of a silent interval within a margin are removed. So in addition, specify 
+
+ * the width of the margin in seconds (```boundary margin```)
+
 ## Performance
 
 Performance varies with different settings. The following seemed to yield the best performance when evaluated on the standard test set of the TIMIT corpus (1,680 recordings, 62,465 manually identified phone-level boundaries):
