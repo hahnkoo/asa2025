@@ -162,6 +162,6 @@ if __name__ == '__main__':
 			ofn = ofn + '.TextGrid'
 			save_as_textgrid(ofn, p, duration)
 		else:
-			with open(ofn, 'w') as of:
+			with open(ofn + '.BND', 'w') as of:
 				for b in p: of.write(str(b) + '\n')
 	sys.stderr.write('\n# Segmentation complete. Outputs saved in ' + args.outdir + '.\n')
