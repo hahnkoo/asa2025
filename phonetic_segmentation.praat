@@ -1,18 +1,10 @@
 # Title: A Praat script for unsupervised phonetic segmentation using spectro-temporal features
 # Author: Hahn Koo (hahn.koo@sjsu.edu)
-# Last updated: 11/26/2025
+# Last updated: 12/4/2025
 
 clearinfo
 
 ## Procedures
-
-procedure load_sound:
- snd$ = chooseReadFile$: "Choose a sound file."
- if snd$ <> ""
-  snd = Read from file... 'snd$'
- endif
- select snd
-endproc
 
 procedure spec: sound_in, window_length_in, max_freq_in, time_step_in, freq_step_in, window_shape_in$
  select sound_in
@@ -150,34 +142,6 @@ procedure spectral_transition_measure: matrix_in, width_in
  select d
 endproc
 
-procedure ngrams: table_in, n_in
- select table_in
- ngt = Copy: "ngrams"
- for i from 1 to n_in-1
-  n_cols = Get number of columns
-  Remove column (index): n_cols
- endfor
- ngm = To Matrix
- for i from 1 to n_in-1
-  select table_in
-  tempt = Copy: "temp"
-  for j from 1 to i
-   Remove column (index): 1
-  endfor
-  for k from i+1 to n_in-1
-   n_cols = Get number of columns
-   Remove column (index): n_cols
-  endfor
-  tempm = To Matrix
-  selectObject: ngm, tempm
-  ng = Merge (append rows)
-  removeObject: tempt, tempm, ngm
-  ngm = ng
- endfor
- removeObject: ngt
- select ngm
-endproc
-
 procedure dot_product: table_in_1, table_in_2
  select table_in_1
  n_rows = Get number of rows
@@ -225,42 +189,53 @@ procedure norm: table_in
 endproc
 
 procedure average_matrix: matrix_in, window_size_in
+ select matrix_in
+ nrs = Get number of rows
+ ncs = Get number of columns
  t = To TableOfReal
- tc = Copy: "average"
- @pad: t, window_size_in-1, "right"
- tp = selected("TableOfReal", 1)
- for i from 1 to window_size_in-1
-  select tc
-  n_rows = Get number of rows
-  n_cols = Get number of columns
-  for r from 1 to n_rows
-   for c from 1 to n_cols
-    select tp
-    v = Get value: r, c+i
-    select tc
-    vc = Get value: r, c
-    Set value: r, c, v + vc
+ @pad: t, window_size_in, "left"
+ left = selected("TableOfReal", 1)
+ Remove column (index): ncs + window_size_in
+ left_table = Copy: "left_table"
+ for k from 1 to window_size_in-1
+  select left
+  Remove column (index): 1
+  for i from 1 to nrs
+   for j from 1 to ncs
+    select left
+    v = Get value: i, j
+    select left_table
+    va = Get value: i, j
+    Set value: i, j, va + v
    endfor
   endfor
+  select left_table
+  Remove column (index): ncs + 1
  endfor
- removeObject: t, tp
- select tc
+ select left_table
  Formula: "self[row, col] / window_size_in"
- @pad: tc, window_size_in, "left"
- left_table = selected("TableOfReal", 1)
- Rename: "left_table"
- for i from 1 to window_size_in
-  n_cols = Get number of columns
-  Remove column (index): n_cols
- endfor
- select tc
- @pad: tc, window_size_in, "right"
- right_table = selected("TableOfReal", 1)
- Rename: "right_table"
- for i from 1 to window_size_in
+ @pad: t, window_size_in, "right"
+ right = selected("TableOfReal", 1)
+ Remove column (index): 1
+ right_table = Copy: "right_table"
+ for k from 1 to window_size_in-1
+  select right
   Remove column (index): 1
+  for i from 1 to nrs
+   for j from 1 to ncs
+    select right
+    v = Get value: i, j
+    select right_table
+    va = Get value: i, j
+    Set value: i, j, va + v
+   endfor
+  endfor
+  select right_table
+  Remove column (index): ncs + 1
  endfor
- removeObject: tc
+ select right_table
+ Formula: "self[row, col] / window_size_in"
+ removeObject: t, left, right
  selectObject: left_table, right_table
 endproc
 
@@ -579,7 +554,6 @@ for snd_index from 1 to n_snds
  Save as text file: output_directory$ + "/" + name$ + ".TextGrid"
  removeObject: feature_matrix_sel, distmm_sel, distm_sel, peaks_sel
  removeObject: snd, textgrid_sel
-
 
 endfor
 removeObject: snd_list
