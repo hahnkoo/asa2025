@@ -96,6 +96,14 @@ Performance varies with different settings. The following seemed to yield the be
 
 Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a reference boundary in the TIMIT corpus, the above resulted in precision = 0.826, recall = 0.735, F-score = 0.778, and R-value (Räsänen et al., 2009) = 0.802.
 
+## A modular version
+
+For speed and extensibility, I also provide a version in the [modular](./modular/) folder where the script is divided into the following:
+
+ * ```extract_features.praat```: a Praat script for feature extraction
+ * ```segment.py``` a Python script for segmentation
+ * ```silence_filter.praat```: a Praat script for silence filtering  
+
 ## References
 
 Baevski, A., Zhou, Y., Mohamed, A., & Auli, M. (2020). Wav2vec 2.0: A framework for self-supervised learning of speech representations. *Advances in Neural Information Processing Systems, 33,* 12449-12460.
