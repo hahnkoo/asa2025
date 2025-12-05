@@ -101,7 +101,7 @@ Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a 
 For speed and extensibility, I also provide a version in the [modular](./modular/) folder where the script is divided into the following:
 
  * ```extract_features.praat```: a Praat script for feature extraction
- * ```segment.py``` a Python script for segmentation
+ * ```segment.py```: a Python script for segmentation
  * ```silence_filter.praat```: a Praat script for silence filtering  
 
 ## References
