@@ -112,8 +112,6 @@ Performance varies with different settings. The following seemed to yield a good
 
 Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a reference boundary in the TIMIT corpus, the above resulted in precision = 0.83, recall = 0.73, F-score = 0.78, and R-value (Räsänen et al., 2009) = 0.80. See Section 3 of [the conference paper (Koo, 2026)](https://doi.org/10.1121/2.0002235) for more.
 
-See more 
-
 ## A modular version
 
 For speed and extensibility, I also provide a version in the [modular](./modular/) folder where the script is divided into the following:
