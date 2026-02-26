@@ -2,6 +2,22 @@
 
 The Praat script (```phonetic_segmentation.praat```) aims to segment an input recording into phone-sized intervals. It does so by converting the recording into a spectro-temporal representation, measures how the representation differs between either side of each frame in the recording, and draws boundaries at peaks of the difference measure. The user can choose from various types of representation (e.g. mel spectrogram, MFCCs) and measure (e.g. cosine distance, spectral transition measure) as well as configure how they are computed and interpreted for peak detection. The segmentation result is saved as a TextGrid file with one interval tier named "phones" in which interval boundaries correspond to segment boundaries. Given that the goal here is segmentation not transcription, the intervals are not labeled. 
 
+## How to cite
+
+Koo, H. (2026). [A Praat script for unsupervised phonetic segmentation based on spectro-temporal representation](https://doi.org/10.1121/2.0002235). *Proceedings of Meetings on Acoustics, 60*(1), 060005.
+
+```bibtex
+@article{koo_2026_poma,
+  title={A Praat script for unsupervised phonetic segmentation based on spectro-temporal representation},
+  author={Koo, Hahn},
+  journal={Proceedings of Meetings on Acoustics},
+  volume={60},
+  number={1},
+  pages={060005},
+  year={2026},
+}
+```
+
 ## Usage
 
 Run [Praat](https://www.fon.hum.uva.nl/praat/), ```Open Praat script...```, and select ```phonetic_segmentation.praat``` on your computer.
@@ -78,7 +94,7 @@ Comparable silent interval boundaries may have already been added but located a 
 
 ## Performance
 
-Performance varies with different settings. The following seemed to yield the best performance when evaluated on the standard test set of the TIMIT corpus (1,680 recordings, 62,465 manually identified phone-level boundaries):
+Performance varies with different settings. The following seemed to yield a good performance when evaluated on the standard test set of the TIMIT corpus (1,680 recordings, 62,465 manually identified phone-level boundaries):
 
  * analysis type: mel spectrogram
  * window length (s): 0.025
@@ -94,7 +110,9 @@ Performance varies with different settings. The following seemed to yield the be
  * peak height: 0.05
  * apply silence filter: no
 
-Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a reference boundary in the TIMIT corpus, the above resulted in precision = 0.826, recall = 0.735, F-score = 0.778, and R-value (Räsänen et al., 2009) = 0.802.
+Defining a hit as a hypothesized boundary occurring within 20 milliseconds of a reference boundary in the TIMIT corpus, the above resulted in precision = 0.83, recall = 0.73, F-score = 0.78, and R-value (Räsänen et al., 2009) = 0.80. See Section 3 of [the conference paper (Koo, 2026)](https://doi.org/10.1121/2.0002235) for more.
+
+See more 
 
 ## A modular version
 
@@ -108,9 +126,11 @@ For speed and extensibility, I also provide a version in the [modular](./modular
 
 Baevski, A., Zhou, Y., Mohamed, A., & Auli, M. (2020). Wav2vec 2.0: A framework for self-supervised learning of speech representations. *Advances in Neural Information Processing Systems, 33,* 12449-12460.
 
-Dusan, S., & Rabiner, L. (2006). On the relation between maximum spectral transition positions and phone boundaries. In *Proceedings of INTERSPEECH 2026* (pp. 645-648).
+Dusan, S., & Rabiner, L. (2006). On the relation between maximum spectral transition positions and phone boundaries. In *Proceedings of INTERSPEECH 2006* (pp. 645-648).
 
 Furui, S. (1986). On the role of spectral transition for speech perception. *The Journal of the Acoustical Society of America, 80*(4), 1016-1025.
+
+Koo, H. (2026). A Praat script for unsupervised phonetic segmentation based on spectro-temporal representation. *Proceedings of Meetings on Acoustics, 60*(1), 060005.
 
 Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., & Sutskever, I. (2023). Robust speech recognition via large-scale weak supervision. In *Proceedings of the International Conference on Machine Learning* (pp. 28492-28518).
 
